@@ -1,0 +1,540 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+        <title>战斗日志</title>
+        <meta name="description" content="" />
+        <meta name="keywords" content="" />
+        <script src="http://www.duowan.com/public/assets/sys/js/jquery-1.6.2.min.js"></script>
+        <script src="http://www.duowan.com/public/assets/sys/js/dww3.min.js"></script>
+
+        <link rel="stylesheet" href="http://assets.dwstatic.com/project/lolbox/2.10.0/css/global.css?v=3" />
+
+        <script type="text/javascript">
+            var topHost = document.referrer;
+            if (topHost != null && topHost.indexOf('duowan.com') < 0 && topHost.indexOf('yy.com') < 0 && topHost.indexOf('yy.tv') < 0 && topHost.indexOf("5153.com") < 0) {
+                if (top.location !== self.location) {
+                    top.location=self.location;
+                }
+            }
+        </script>
+        <script>
+            var js$yyuid = "";
+            function loadSubscription(div)  {
+                if (div.find('.rss-count').html() == "") {
+                    div.find('.rss-count').html('0');
+                        var aid = div.attr('yyaid');
+                        $.get("http://lolbox.duowan.com/yyLiveCertifiedAnchorSubscribe.php?stamp=" + (new Date()).getTime() +  "&aid=" + aid + "&uid=" + js$yyuid, function(data) {
+                                if (data) {
+                                var result = eval('('+ data + ')');
+                                if (result['subscribed']) {
+                                div.addClass('brocast-rssed');
+                                }
+                                else {
+                                div.removeClass('brocast-rssed');
+                                }
+                                div.find('.rss-count').html(result['count']);
+                                }
+                                });
+                }
+            }
+function doSubscription(div) {
+    if (js$yyuid == "") {
+        location.href = "lolbox://LoginYY";
+    }
+    else {
+        var aid = div.attr('yyaid');
+            if (!div.hasClass('.brocast-rssed')) {
+                $.get("http://lolbox.duowan.com/yyLiveCertifiedAnchorSubscribe.php?stamp=" + (new Date()).getTime() +  "&op=subscribe&aid=" + aid + "&uid=" + js$yyuid, function(data) {
+                        if (data) {
+                        var result = eval('('+ data + ')');
+                        if (result['subscribed']) {
+                        div.addClass('brocast-rssed');
+                        }
+                        else {
+                        div.removeClass('brocast-rssed');
+                        }
+                        div.find('.rss-count').html(result['count']);
+                        }
+                        });
+            }
+            else {
+                $.get("http://lolbox.duowan.com/yyLiveCertifiedAnchorSubscribe.php?stamp=" + (new Date()).getTime() +  "&op=unsubscribe&aid=" + aid + "&uid=" + js$yyuid, function(data) {
+                        if (data) {
+                        var result = eval('('+ data + ')');
+                        if (result['subscribed']) {
+                        div.addClass('brocast-rssed');
+                        }
+                        else {
+                        div.removeClass('brocast-rssed');
+                        }
+                        div.find('.rss-count').html(result['count']);
+                        }
+                        });
+            }
+    }
+}
+function prepareCertifiedLiveAnchorHover() {
+    $("body").delegate('.brocast-vip','mouseenter', function(event) {
+            var menu = $(this).find(".mod-tips-s3");
+            if( $(window).height() - event.clientY <  menu.height() )
+            {
+            $(this).addClass('brocast-vip-top');
+            menu.css('margin-top', '-'+ menu.height() - 30 + 'px');
+            }
+            $(this).css('z-index', 101).find('.mod-tips-s3').show();
+            /* Act on the event */
+            loadSubscription($(this).find('.brocast-rss'));
+            });
+    $("body").delegate('.brocast-vip','mouseleave', function(event) {
+            // console.log( event );
+            var _this = $(this);
+            window.brocastSign = setTimeout(function(){
+                _this.css('z-index', 100).find('.mod-tips-s3').hide();
+                },200)
+            /* Act on the event */
+            });
+    $("body").delegate('.mod-tips-s3','mouseenter', function(event) {
+            //alert(window.brocastSign);
+            clearTimeout(window.brocastSign);
+            /* Act on the event */
+            });
+}
+$(function() {
+        prepareCertifiedLiveAnchorHover();
+        });
+
+var js$certifiedLiveAnchors = null;
+function loadCertifiedLiveAnchors() {
+    $.get("http://lolbox.duowan.com/yyLiveCertifiedAnchorMapData.php?data-request=json", function(data) {
+            if (data) {
+            js$certifiedLiveAnchors = eval('('+ data + ')');
+            }
+            });
+}
+
+function getPlayerNames() {
+    return $("#playerNames").text();
+}
+
+function getRowIndexByPlayerName(playerName) {
+    var rowIdx = -1;
+        var playerNames = getPlayerNames();
+        if (playerNames) {
+            var playerNamesList = playerNames.split('|');
+
+                for (rowIdx = 0; rowIdx < playerNamesList.length; rowIdx++) {
+                    if (playerNamesList[rowIdx] === playerName) {
+                        return rowIdx;
+                    }
+                }
+        }
+    return rowIdx;
+}
+
+function htmlCertifiedLiveAnchorIcon(nickname) {
+    if (js$certifiedLiveAnchors) {
+        var anchor = js$certifiedLiveAnchors[nickname];
+            if (anchor) {
+                var applyClassNames = [];
+                    applyClassNames.push("brocast-vip");
+                    applyClassNames.push('brocast-vip-type' + anchor['level']);
+
+                    var idx = getRowIndexByPlayerName(nickname);
+                    if (idx > 5) {
+                        applyClassNames.push('brocast-vip-top');
+                    }
+
+                    var html =
+                    '<span class="' + applyClassNames.join(' ') + '">' +
+                    '<i></i>' +
+                    '<div class="mod-tips-s3 hide">' +
+                    '<div class="mod-tips-content">' +
+                    '<p style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"><em>主播：</em>' + anchor['yynick'] + '</p>' +
+                    '<p><em>频道：</em>' + anchor['channel'] + '</p>' +
+                    '<p><em>认证：</em>' + anchor['tag'] + '</p>' +
+                    '<div class="brocast-rss" yyaid="' + anchor['yyaid'] + '" onclick="doSubscription($(this))" style="cursor:pointer"><strong class="rss-count"></strong></div>' +
+                    '</div>' +
+                    '<i class="arrow t"></i>' +
+                    '<span class="tag"></span>' +
+                    '</div>' +
+                    '</span>';
+                    return html;
+            }
+    }
+    return '';
+}
+
+function addAnchorIconsToMatchList() {
+    for(var playerName in js$certifiedLiveAnchors) {
+        $('#matchDetail').find('.team-name').each(function() {
+                var playerNameGot = decodeURIComponent($(this).find('.avatar').attr('data-playerName'));
+                if ( playerNameGot == playerName) {
+                $(this).find('a').after( htmlCertifiedLiveAnchorIcon(playerName) );
+                }
+                });
+    }
+}
+        </script>
+        <script type="text/javascript">
+            loadCertifiedLiveAnchors();
+        </script>
+
+        <link rel="stylesheet" href="images/global.css?v=2013120227" />
+        <link rel="stylesheet" href="http://wan.duowan.com/static/css/god-icons.css" />
+        <script type="text/javascript">var jiathis_config = { };</script>
+        <script type="text/javascript" src="js/sns_share.js?v=20121101" charset="utf-8"></script>
+    </head>
+    <body scroll='no'  style="overflow:hidden">
+        <div class="box">
+            <div class="box-hd">
+                <div class="fl crumbs">
+                    <a href="playerSearch.php">战绩查询</a><span>&gt;</span>
+                    <a href="playerDetail.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4">楼兰破（艾欧尼亚）</a>
+                    <span>&gt;</span>战斗日志
+                </div>
+                <span style="float:left"> <a style="margin-left:15px" href="favorateMatchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4">TA的收藏</a> </span>
+                <div class="btns-fast">
+                    <a title="返回" href="javascript:history.back();" onfocus="this.blur();" class="icons"><i></i></a>
+                    <div class="share">
+                        <a class="icons" href="#"><i></i></a>
+                        <div class="links">
+                            <a class="button_tsina" href="#"><span>新浪微博</span></a>
+                            <a class="button_tqq" href="#"><span>腾讯微博</span></a>
+                            <a class="button_qzone" href="#"><span>QQ空间</span></a>
+                            <a class="screenshot" href="javascript:screenshot();"><span>本页截图</span></a>
+                            <a class="copy-link" href="javascript:window.clipboardData.setData('Text',window.location.href);alert('链接复制成功');"><span>复制链接</span></a>
+                        </div>
+                    </div>
+                    <a title="刷新" href="javascript:location.reload();" onfocus="this.blur();" class="icons refresh"><i></i></a>
+                    <script>
+                        function screenshot() {
+                            $('.share').removeClass('hover');
+                                setTimeout(function() {
+                                        window.location.href='lolboxphoto://电信一_楼兰破_玩家战绩';
+                                        }, 200);
+                        }
+$('.box .box-hd .btns-fast .share').hover(function(){
+        jiathis_config = {
+        title: "#无盒子 不开撸# 我是楼兰破，我在使用LOL盒子。来看看我的比赛成绩吧！",
+        appkey: {
+        "tsina":"3629014272",
+        "tqq":"801220649",
+        "qzone":"100302822"
+        },
+summary:" ",
+ralateuid:{
+"tsina":"2909042820"
+}
+};
+$(this).addClass('hover');
+},function(){
+$(this).removeClass('hover');
+});
+                    </script>
+                </div>
+
+            </div>
+            <div class="box-bd">
+                <div class="l-page">
+                    <ul>
+                        <li id="cli10542375723" class="hover"  onclick="loadMatchDetail(10542375723,'NORMAL','电信一','楼兰破');">
+                        <img src="http://img.lolbox.duowan.com/champions/Fiora_40x40.jpg" alt="无双剑姬" title="无双剑姬"/>
+                        <p><em class="green">胜利</em></p>
+                        <p class="info"><span>匹配赛</span>12-20</p>
+                        </li>
+
+                        <li id="cli10540092369"  onclick="loadMatchDetail(10540092369,'NORMAL','电信一','楼兰破');">
+                        <img src="http://img.lolbox.duowan.com/champions/Fiora_40x40.jpg" alt="无双剑姬" title="无双剑姬"/>
+                        <p><em class="green">胜利</em></p>
+                        <p class="info"><span>匹配赛</span>12-20</p>
+
+                        </li>
+                        <li id="cli10525178168"  onclick="loadMatchDetail(10525178168,'NORMAL','电信一','楼兰破');">
+                        <img src="http://img.lolbox.duowan.com/champions/Fiora_40x40.jpg" alt="无双剑姬" title="无双剑姬"/>
+                        <p><em class="red">失败</em></p>
+                        <p class="info"><span>匹配赛</span>12-19</p>
+
+                        </li>
+                        <li id="cli10516446435"  onclick="loadMatchDetail(10516446435,'NORMAL','电信一','楼兰破');">
+                        <img src="http://img.lolbox.duowan.com/champions/Ezreal_40x40.jpg" alt="探险家" title="探险家"/>
+                        <p><em class="red">失败</em></p>
+                        <p class="info"><span>匹配赛</span>12-18</p>
+
+                        </li>
+                        <li id="cli10487367192"  onclick="loadMatchDetail(10487367192,'NORMAL','电信一','楼兰破');">
+                        <img src="http://img.lolbox.duowan.com/champions/Fiora_40x40.jpg" alt="无双剑姬" title="无双剑姬"/>
+                        <p><em class="green">胜利</em></p>
+                        <p class="info"><span>匹配赛</span>12-16</p>
+
+                        </li>
+                        <li id="cli10463438485"  onclick="loadMatchDetail(10463438485,'NORMAL','电信一','楼兰破');">
+                        <img src="http://img.lolbox.duowan.com/champions/Fiora_40x40.jpg" alt="无双剑姬" title="无双剑姬"/>
+                        <p><em class="green">胜利</em></p>
+                        <p class="info"><span>匹配赛</span>12-14</p>
+
+                        </li>
+                        <li id="cli10423326516"  onclick="loadMatchDetail(10423326516,'NORMAL','电信一','楼兰破');">
+                        <img src="http://img.lolbox.duowan.com/champions/MasterYi_40x40.jpg" alt="无极剑圣" title="无极剑圣"/>
+                        <p><em class="green">胜利</em></p>
+                        <p class="info"><span>匹配赛</span>12-12</p>
+
+                        </li>
+                        <li id="cli10418360773"  onclick="loadMatchDetail(10418360773,'NORMAL','电信一','楼兰破');">
+                        <img src="http://img.lolbox.duowan.com/champions/Fiora_40x40.jpg" alt="无双剑姬" title="无双剑姬"/>
+                        <p><em class="green">胜利</em></p>
+                        <p class="info"><span>匹配赛</span>12-11</p>
+
+                        </li>
+                    </ul>
+                    <script type="text/javascript">
+                        $(".l-page ul li").click(function(){
+                                $(".l-page ul li").removeClass("hover");
+                                $(this).addClass("hover");
+                                })
+                    </script>
+                    <!-- 分页{ -->
+                    <div class="center">
+                        <div class="mod-page">
+                            <a href="matchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4&page=0" class="current"  title="第1页">1</a><a href="matchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4&page=1" title="第2页">2</a><a href="matchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4&page=2" title="第3页">3</a><a href="matchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4&page=3" title="第4页">4</a><a href="matchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4&page=4" title="第5页">5</a><a href="matchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4&page=5" title="第6页">6</a><a href="matchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4&page=6" title="第7页">7</a><a href="matchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4&page=7" title="第8页">8</a> <a href="matchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4&page=1" class="next" title="下一页"></a></div>            </div>
+                </div>
+                <!-- }分页 -->
+                <div  class="r-table">
+                    <div id="matchDetail">
+                        <img src="images/loading.gif" width="400" height="400">
+                    </div>
+                    <script>
+
+                        function getCookie(cookieName) {
+                            var cookieString = document.cookie;
+                                var start = cookieString.indexOf(cookieName + '=');
+                                // 加上等号的原因是避免在某些 Cookie 的值里有
+                                // 与 cookieName 一样的字符串。
+                                if (start == -1) // 找不到
+                                    return null;
+                                        start += cookieName.length + 1;
+                                        var end = cookieString.indexOf(';', start);
+                                        if (end == -1)
+                                            return cookieString.substring(start);
+                                                return   cookieString.substring(start, end);
+                        }
+
+function loadMatchDetail(matchId,queueType,serverName,playerName)
+{
+    $('#matchDetail').html('<img src="images/loading.gif" width="400" height="400">');
+        window.location.hash = matchId + ',' + queueType;
+        //			getMatchDetail(matchId);
+        if(matchId!='' && matchId!=null)
+        {
+            $('#matchDetail').html('<img src="images/loading.gif" width="400" height="400">');
+                $.ajax(
+                        {
+url: "ajaxMatchDetail.php",
+data:{matchId:matchId,queueType:queueType,serverName:serverName,playerName:playerName},
+cache:true,
+success: function(data,textStatus){
+if(textStatus =='success')
+{
+$('#matchDetail').html(data);
+if (SnsShare) SnsShare.init();
+if (wan) wan.init();
+
+addAnchorIconsToMatchList();
+prepareCertifiedLiveAnchorHover();
+}
+window.location.hash = matchId + ',' + queueType;
+},
+error:function(){
+$('#matchDetail').html('<p style="padding:50px">盒子未找到此场比赛的详情信息。</p>');
+$('.detailTip').html('');
+}
+});
+}
+}
+
+
+function myFavorateMatches(action,timestamp)
+{
+    var boxPlayerName=decodeURI(getCookie('boxPlayerName'));
+        var boxServerName=decodeURI(getCookie('boxServerName'));
+        //alert(action + boxServerName + boxPlayerName);
+        $.ajax(
+                {
+url: "webApi.php",
+data:{serverName:boxServerName,playerName:boxPlayerName,action:action,timestamp:timestamp},
+cache:false,
+success: function(msg){
+//alert(msg);
+if(msg == 1){
+location.reload();
+}else if(msg == -1){
+alert('非法操作，请至少登陆一次游戏！');
+}else if(msg == -2)
+{
+alert('超过战绩收藏最大数24场！');
+}else if(msg == 0)
+{
+alert('收藏的比赛不存在');
+}
+},
+error:function(){
+}
+});
+}
+
+                    </script>
+                    <!--分享链接-->
+                    <div id="a2Ad" class="mod-share" style="height:28px !important;line-height:28px !important;padding:1px 0px !important">
+                        <!--<span class="comment"><a href="#">评论(3)</a></span></span>-->
+                        <script src="http://market.duowan.com/duowan/227029454487.js"></script>
+                        <script type="text/javascript" src="http://sz.duowan.com/s/ya/ya.1.3.1-min.js"></script>
+                        <script>
+                            //lolbox游戏广告统计，调用接口发送到海度
+                        $(document).ready(function(){
+                                $("#dw-counter").click(function(){
+                                    var href = $(this).attr('href');
+                                    var reg = new RegExp('^lolbox','gi');
+                                    if(reg.test(href)){
+                                    var gReg = new RegExp("\/.*?([\?])",'i');
+                                    var result = gReg.exec(href);
+                                    if(result){
+                                    var gameid = [];
+                                    for(var i = result.index+1;i<href.length;i++){
+                                    if(href[i] == '?'){
+                                    break;
+                                    }else{
+                                    gameid.push(href[i]);
+                                    }
+                                    }
+                                    var gameId = gameid.join('');
+                                    gameId = gameId.split('/')[2];
+                                    }else{
+                                    var gameId = 'null';
+                                    }
+                                    }else{
+                                        var gameId = 'null';
+                                    }
+
+                                    var yySourceIndex = "A2";
+                                    var source = "A2广告位";
+                                    var serverId = "null";
+
+                                    var yyuid = "";
+                                    var username = "%E6%A5%BC%E5%85%B0%E7%A0%B4";
+
+                                    this.ya = new YA.report.YYAnalytics('boxgame', yyuid, '');//yyuid为空，则传空串 ''
+                                var data = {
+                                    pro :   "yygame_300",
+                                        rso :   "FROM_LOLBOX",
+                                        pas :   username, //// username为空，则传空串 ''
+                                            rso_desc    :   "LOL盒子"
+                                };
+                                console.log(data);
+                                    this.ya.reportProductStartUp(data,'');
+                                    var data = { eid : "click/lolbox/zjtab/" + yySourceIndex, eid_desc :"点击/LOL盒子/战绩tab/" + source, pro : "yygame_300", gam : gameId, gse : serverId};
+                                    console.log(data);
+                                    this.ya.reportProductEvent(data, '');
+
+                                });
+                        });
+
+                        </script>
+                        <!-- 社交网站分享{ 			-->
+                        <!--  <script src="images/share-1.2.0.min.js"></script>-->
+                        <script>
+                            //var _shareToPic = "http://maxlee.org/img.php?250";
+                            //shareButtons();
+                        </script>
+                        <!-- }社交网站分享 -->
+                    </div>
+                    <!--分享链接-->
+
+                </div>
+            </div>
+        </div>
+        <!-- 成就分享{ -->
+        <div class="mod-tips-s3 ach-share hide">
+            <div class="mod-tips-content">
+                <div class="txt"><strong></strong></div>
+                <div id="ckepop" class="clearfix">
+                    <span class="jiathis_txt">分享到：</span><a class="button_tsina"></a><a class="button_tqq"></a><a class="button_qzone"></a>
+                </div>
+            </div>
+            <i class="arrow t"></i>
+        </div>
+        <!-- }成就分享 -->
+
+        <div id="__dvCompute" style="font-size:12px;position:absolute;visibility:hidden"></div>
+        <script type="text/javascript">
+            function StrRangeCompute(str) {
+                var d = document.getElementById('__dvCompute');
+                    d.innerHTML = str;
+                    return { w: d.offsetWidth, h: d.offsetHeight };
+            }
+function normalizePlayerName(playerName) {
+    playerName = playerName.replace(/斗鱼TV/i, "");
+        var maxWidth = 96;
+        var range = StrRangeCompute(playerName);
+        if (range.w > maxWidth) {
+            var p = playerName[0];
+                for (var i = 1; i < playerName.length; i++) {
+                    var _range = StrRangeCompute(p + playerName[i]);
+                        if (_range.w > maxWidth)
+                            return p + '...';
+                        else
+                            p = p + playerName[i];
+                }
+        }
+    return playerName;
+}
+        </script>
+
+        <script type="text/javascript" src="/js/heroesList.js?v=1"></script>
+        <script type="text/javascript" src="/js/zbItems.js?v=1"></script>
+
+        <script type="text/javascript">
+            var IMAGE_URL = 'http://img.lolbox.duowan.com';
+            var serverName = '%E7%94%B5%E4%BF%A1%E4%B8%80';
+            var encodeServerName = encodeURIComponent(serverName);
+            var playerName = '楼兰破';
+            var boxPlayerName = decodeURI(getCookie('boxPlayerName'));
+
+            var _historyArgs = window.location.hash;
+            if (_historyArgs && _historyArgs.length > 1) {
+                var args = _historyArgs.replace('#', '').split(',');
+                    $(function(){
+                            loadMatchDetail(args[0],args[1],'%E7%94%B5%E4%BF%A1%E4%B8%80','%E6%A5%BC%E5%85%B0%E7%A0%B4');
+                            });
+                $(".l-page ul li").removeClass("hover");
+                    $('#cli' + args[0]).addClass("hover");
+            } else {
+                loadMatchDetail(10542375723,'NORMAL','%E7%94%B5%E4%BF%A1%E4%B8%80','%E6%A5%BC%E5%85%B0%E7%A0%B4');
+            }
+        </script>
+
+        <script>var stat_app_name = "boxgame_matchlist"; var stat_uid = ""; var stat_oper_default = false; </script>
+        <script src="http://assets.dwstatic.com/f=amkit/entry.js"></script>
+        <script>
+            seajs.use("p/statistics/main", function() {
+                    $('#a2Ad a').each(function() {
+                        if (!$(this).attr('data-stat')) return;
+                        var words = $(this).attr('data-stat').split('_');
+                        words[2] += '展示';
+                        webUserOper.spStat({ app:stat_app_name, oper: words.join('_'), tar: $(this).find('img').attr('src') });
+                        });
+                    });
+        </script>
+        <script src="http://assets.dwstatic.com/wan/E794B5E4BFA1E4B880.js?09" type="text/javascript"></script>
+        <script type="text/javascript">_hiido_no=0;_hiido_wid=["lbox"];</script>
+        <script src="http://www.duowan.com/duowan.js" type="text/javascript"></script>
+        <script src="http://www.duowan.com/public/s/market_count.js" type="text/javascript"></script>
+        <script>
+            if (SnsShare) SnsShare.init();
+            if (window.attachEvent) { window.attachEvent("onload", function() {  setTimeout(function() {   document.body.className = document.body.className;  }, 1000); });}
+        </script>
+
+    </body>
+</html>
+

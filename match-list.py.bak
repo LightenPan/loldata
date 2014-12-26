@@ -1,0 +1,16 @@
+# coding=utf-8
+
+import urllib
+
+params = urllib.urlencode({'serverName': '%E7%94%B5%E4%BF%A1%E4%B8%80', 'playerName': '%E6%A5%BC%E5%85%B0%E7%A0%B4', 'page': 0})
+conn = urllib.urlopen("http://lolbox.duowan.com//matchList.php?%s" % params)
+print conn.read()
+conn.close()
+
+from pyquery import PyQuery as pyq
+doc=pyq(url=r'http://lolbox.duowan.com/matchList.php?serverName=%E7%94%B5%E4%BF%A1%E4%B8%80&playerName=%E6%A5%BC%E5%85%B0%E7%A0%B4&page=0#10540092369,NORMAL')
+cts=doc('#l-page ul')
+ 
+for j in cts.find('.li'):
+    print pyq(j).text()
+    print "\n"
