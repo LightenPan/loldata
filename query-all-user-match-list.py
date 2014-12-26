@@ -9,7 +9,7 @@ def check_is_finish():
 	db = MySQLdb.connect(host="localhost", user="root", passwd="111111", db="lol", charset="utf8", cursorclass = MySQLdb.cursors.DictCursor)
 	cursor = db.cursor()
 
-	cursor.execute('select * from user_id_name_update_flag where chg_num = 0 limit 1')
+	cursor.execute("select * from user_id_name_update_flag where chg_status='0' limit 1")
 	rs = cursor.fetchall()
 	# print rs
 
@@ -27,9 +27,19 @@ def read_and_query():
 	db = MySQLdb.connect(host="localhost", user="root", passwd="111111", db="lol", charset="utf8", cursorclass = MySQLdb.cursors.DictCursor)
 	cursor = db.cursor()
 
-	cursor.execute('select * from user_id_name_update_flag where chg_num = 0 and lock_num = 0 limit 1')
+	import uuid
+	chg_status = uuid.uuid1()
+	try:
+		update_sql = "update user_id_name_update_flag set chg_status='%s' where chg_status='0' limit 1;" % chg_status
+		cursor.execute(update_sql)
+		db.commit()
+	except MySQLdb.Error, e:
+		db.rollback()
+
+	select_sql = "select * from user_id_name_update_flag where chg_status='%s';" % chg_status
+	cursor.execute(select_sql)
 	rs = cursor.fetchall()
-	# print rs
+	print rs
 
 	if len(rs) < 1:
 		return
@@ -38,7 +48,7 @@ def read_and_query():
 	print row
 
 	import subprocess
-	shell_cmd = 'python user-match-list.py --area_id_name=%s --user_id_name=%s' % (row['area_id_name'], row['user_id_name'])
+	shell_cmd = 'python user-match-list.py --area_id_name=%s --user_id_name=%s --chg_status=%s' % (row['area_id_name'], row['user_id_name'], chg_status)
 	print shell_cmd
 	subprocess.call(shell_cmd, shell=True)
 
@@ -54,6 +64,8 @@ def main():
 		if (None == options[i]):
 			parser.error("plase input " + i)
 
+	import time
+	print time.time()*1000
 	while check_is_finish() != True:
 		read_and_query()
 
