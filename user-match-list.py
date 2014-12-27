@@ -337,7 +337,7 @@ def main():
 	# print args
 
 	options = vars(args)
-	# print options
+	print options
 	for i in options:
 		if (None == options[i]):
 			parser.error("plase input " + i)
