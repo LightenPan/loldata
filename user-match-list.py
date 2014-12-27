@@ -14,7 +14,7 @@ def insert_user_flag(area_id_name, user_id_name):
 	cursor = db.cursor()
 
     #写入数据库
-	sql = "insert into user_id_name_update_flag ( area_id_name,user_id_name,chg_num ) values( '%s','%s',%s )" % (area_id_name, user_id_name, 0)
+	sql = "insert ignore into user_id_name_update_flag ( area_id_name,user_id_name,chg_status ) values( '%s','%s','0' )" % (area_id_name, user_id_name)
 	print sql
 
 	try:
@@ -170,7 +170,7 @@ def get_match_detail(area_id_name, match_id, user_id_name):
 			# 提交到数据库执行
 			db.commit()
 		except MySQLdb.Error, e:
-			print "Error %d: %s" % (e.args[0], e.args[1])
+			# print "Error %d: %s" % (e.args[0], e.args[1])
 			# Rollback in case there is any error
 			db.rollback()
 
@@ -303,7 +303,7 @@ def get_match_list(area_id_name, user_id_name, page_index):
 	#	# writer.writerow([unicode(s).encode("utf-8") for s in item.keys()])
 	#	writer.writerow([unicode(s).encode("utf-8") for s in item.values()])
 
-def insert_or_update_user_flag(area_id_name, user_id_name):
+def update_user_flag(area_id_name, user_id_name, chg_status):
 	#输出mysql
 	import MySQLdb
 
@@ -311,8 +311,10 @@ def insert_or_update_user_flag(area_id_name, user_id_name):
 	db = MySQLdb.connect(host="localhost", user="root", passwd="111111", db="lol", charset="utf8")
 	cursor = db.cursor()
 
+	#先查询，如果存在就更新，不存在就插入
+
     #写入数据库
-	sql = "insert into user_id_name_update_flag ( area_id_name,user_id_name,chg_num ) values ( '%s','%s',%s ) ON DUPLICATE KEY UPDATE chg_num = chg_num + 1" % (area_id_name, user_id_name, 1)
+	sql = "update user_id_name_update_flag set chg_status='1' where area_id_name = '%s' and user_id_name = '%s' and chg_status='%s'" % (area_id_name, user_id_name, chg_status)
 	print sql
 
 	try:
@@ -325,11 +327,12 @@ def insert_or_update_user_flag(area_id_name, user_id_name):
 		# Rollback in case there is any error
 		db.rollback()
 
-import argparse
 def main():
+	import argparse
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--area_id_name", dest="area_id_name", help=u"lol大区名")
 	parser.add_argument("--user_id_name", dest="user_id_name", help=u"lol游戏角色名")
+	parser.add_argument("--chg_status", dest="chg_status", help=u"数据库索引id")
 	args = parser.parse_args()
 	# print args
 
@@ -341,11 +344,12 @@ def main():
 
 	area_id_name = options['area_id_name']
 	user_id_name = options['user_id_name']
+	chg_status = options['chg_status']
 
 	for i in range(0, 8):
 		get_match_list(area_id_name, user_id_name, i)
 
-	insert_or_update_user_flag(area_id_name, user_id_name)
+	update_user_flag(area_id_name, user_id_name, chg_status)
 
 if __name__ == "__main__":
 	main()
