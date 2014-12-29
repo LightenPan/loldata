@@ -1,0 +1,10 @@
+--  CREATE TABLE if not exists lol.match_ex_info_20 LIKE lol.match_ex_info;
+--  INSERT INTO lol.match_ex_info_20 SELECT * FROM lol.match_ex_info WHERE match_id%100=20;
+--  CREATE TABLE if not exists lol.match_ex_info_21 LIKE lol.match_ex_info;
+--  INSERT INTO lol.match_ex_info_21 SELECT * FROM lol.match_ex_info WHERE match_id%100=21;
+--  CREATE TABLE if not exists lol.match_ex_info_22 LIKE lol.match_ex_info;
+--  INSERT INTO lol.match_ex_info_22 SELECT * FROM lol.match_ex_info WHERE match_id%100=22;
+--  CREATE TABLE if not exists lol.match_ex_info_23 LIKE lol.match_ex_info;
+--  INSERT INTO lol.match_ex_info_23 SELECT * FROM lol.match_ex_info WHERE match_id%100=23;
+CREATE TABLE if not exists lol.match_ex_info_24 LIKE lol.match_ex_info;
+INSERT INTO lol.match_ex_info_24 SELECT * FROM lol.match_ex_info WHERE match_id%100=24;

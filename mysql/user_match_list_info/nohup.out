@@ -1,0 +1,5 @@
+ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'exist lol.user_match_list_info_0 LIKE lol.user_match_list_info' at line 1
+ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'exist lol.user_match_list_info_1 LIKE lol.user_match_list_info' at line 1
+ERROR 1317 (70100) at line 2: Query execution was interrupted
+Ctrl-C -- sending "KILL QUERY 164681" to server ...
+Ctrl-C -- query aborted.

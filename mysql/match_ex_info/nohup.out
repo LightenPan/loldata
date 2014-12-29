@@ -1,0 +1,11 @@
+split_match_ex_info_05_09.sql: 1: split_match_ex_info_05_09.sql: --: not found
+split_match_ex_info_05_09.sql: 2: split_match_ex_info_05_09.sql: --: not found
+split_match_ex_info_05_09.sql: 3: split_match_ex_info_05_09.sql: --: not found
+split_match_ex_info_05_09.sql: 4: split_match_ex_info_05_09.sql: --: not found
+split_match_ex_info_05_09.sql: 5: split_match_ex_info_05_09.sql: --: not found
+split_match_ex_info_05_09.sql: 6: split_match_ex_info_05_09.sql: --: not found
+split_match_ex_info_05_09.sql: 7: split_match_ex_info_05_09.sql: --: not found
+split_match_ex_info_05_09.sql: 8: split_match_ex_info_05_09.sql: --: not found
+split_match_ex_info_05_09.sql: 9: split_match_ex_info_05_09.sql: CREATE: not found
+split_match_ex_info_05_09.sql: 10: split_match_ex_info_05_09.sql: INSERT: not found
+mysql: Error reading file 'UNOPENED' (Errcode: 9)
