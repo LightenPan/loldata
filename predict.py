@@ -2,14 +2,30 @@
 
 import mysql_helper
 
-def get_kda(area_id_name, user_id_name):
+
+def num_table_index(match_id):
+	return int(match_id)%100
+
+
+def name_table_index(val):
+	import binascii
+	num = binascii.crc32(val) & 0xffffffff
+	return (num%100)
+
+
+def get_kda(area_id_name, user_id_name, limit_num):
 	db = mysql_helper.MySQL('127.0.0.1', 'root', '111111', 3306)
 	db.selectDb('lol')
-	query_sql = "select * from match_ex_info where area_id_name = '%s' and user_id_name = '%s'" % (area_id_name, user_id_name)
+	query_sql = "select * from match_ex_info_%s where area_id_name = '%s' and user_id_name = '%s' limit %s" % (name_table_index(user_id_name), area_id_name, user_id_name, limit_num)
 	db.query(query_sql)
 
 	rows = db.fetchAll()
-	print rows
+	# print rows
+
+	if len(rows) < int(limit_num):
+		print "not enough limit num, len: %s, limit_num: %s" % (len(rows), limit_num)
+		return
+
 
 	kda = 0.0
 	for row in rows:
@@ -27,13 +43,18 @@ def get_kda(area_id_name, user_id_name):
 
 	return kda
 
-def get_money(area_id_name, user_id_name):
+
+def get_money(area_id_name, user_id_name, limit_num):
 	db = mysql_helper.MySQL('127.0.0.1', 'root', '111111', 3306)
 	db.selectDb('lol')
-	query_sql = "select * from match_ex_info where area_id_name = '%s' and user_id_name = '%s'" % (area_id_name, user_id_name)
+	query_sql = "select * from match_ex_info_%s where area_id_name = '%s' and user_id_name = '%s' limit %s" % (name_table_index(user_id_name), area_id_name, user_id_name, limit_num)
 	db.query(query_sql)
 
 	rows = db.fetchAll()
+
+	if len(rows) < int(limit_num):
+		print "not enough limit num, len: %s, limit_num: %s" % (len(rows), limit_num)
+		return
 
 	money = 0
 	for row in rows:
@@ -42,6 +63,7 @@ def get_money(area_id_name, user_id_name):
 	if len(rows) > 0:
 		money = money/len(rows)
 	return money
+
 
 def get_user_zdl(area_id_name, user_id_name):
 	import urllib2
@@ -56,96 +78,98 @@ def get_user_zdl(area_id_name, user_id_name):
 
 	return dict_zdl['lolcombat']
 
-def get_match_detail(area_id_name, match_id, user_id_name):
-	from pyquery import PyQuery as pyq
-	import json
-	import urllib2
+def get_match_detail(match_id, limit_num):
+	db = mysql_helper.MySQL('127.0.0.1', 'root', '111111', 3306)
+	db.selectDb('lol')
+	query_sql = "select * from match_ex_info_%s where match_id = %s" % (num_table_index(match_id), match_id)
+	db.query(query_sql)
 
-	referer_url = u'http://lolbox.duowan.com/matchList.php?serverName=%s&playerName=%s&page=0' % (area_id_name, user_id_name)
-	print referer_url
+	rows = db.fetchAll()
+	# print rows
 
-	query_url = u'http://lolbox.duowan.com/ajaxMatchDetail.php?matchId=%s&queueType=NORMAL&serverName=%s&playerName=%s' % (match_id, area_id_name, user_id_name)
-	print query_url
+	win_kda = 0.0
+	lose_kda = 0.0
+	win_money = 0
+	lose_money = 0
+	for item in rows:
+		item['avg_kda'] = get_kda(item['area_id_name'], item['user_id_name'], limit_num)
+		item['avg_money'] = get_money(item['area_id_name'], item['user_id_name'], limit_num)
 
-	opener = urllib2.build_opener()
-	opener.addheaders = [('X-Requested-With:', 'XMLHttpRequest')]
-	opener.addheaders = [('Referer', referer_url)]
-	conn = opener.open(query_url)
-
-	content = unicode(conn.read(), "utf-8")
-	#content = conn.read()
-
-	doc=pyq(content)
-
-	#print doc
-
-	match_persion_list = []
-	persion_cts = doc('.tips-a')
-	for i in persion_cts.find('.mod-tips-content'):
-		#print pyq(i)
-
-		user_id_name = pyq(i).find('.player-name').text()
-
-		user_profile = {}
-		user_profile['user_id_name'] = user_id_name
-		user_profile['area_id_name'] = area_id_name
-		user_profile['zdl'] = get_user_zdl(area_id_name, user_id_name)
-		match_persion_list.append(user_profile)
-
-		# print user_profile
-
-	user_count = len(match_persion_list)
-	# print user_count
-
-	win_zdl = 0
-	lose_zdl = 0
-	for i in range(0, user_count):
-		user_profile = match_persion_list[i]
-		if (i < user_count/2):
-			win_zdl = win_zdl + int(user_profile['zdl'])
+		if item['win_or_lose'] == '1':
+			win_kda = win_kda + item['avg_kda']
+			win_money = win_money + item['avg_money']
 		else:
-			lose_zdl = lose_zdl + int(user_profile['zdl'])
+			lose_kda = lose_kda + item['avg_kda']
+			lose_money = lose_money + item['avg_money']
 
-	# print win_zdl, lose_zdl
+	first_item = rows[0]
+	if first_item['win_or_lose'] == '1':
+		if win_kda > lose_kda:
+			first_item['predict_ret_by_kda'] = 1
+		else:
+			first_item['predict_ret_by_kda'] = 0
 
-	#输出csv文件
-	import csv
+		if win_money > lose_money:
+			first_item['predict_ret_by_money'] = 1
+		else:
+			first_item['predict_ret_by_money'] = 0
 
-	writer = csv.writer(file('zdl.csv', 'a'))
-	#写入csv头
-	# fieldnames = list(match_persion_list[0].keys())
-	# print json.dumps(fieldnames, encoding="UTF-8", ensure_ascii=False)
-	# writer.writerow([unicode(s).encode("utf-8") for s in fieldnames])
-	for item in match_persion_list:
-		# print json.dumps(item.values(), encoding="utf-8", ensure_ascii=false)
-		writer.writerow([unicode(s).encode("utf-8") for s in item.values()])
-	writer.writerow([win_zdl, lose_zdl])
+	else:
+		if win_kda > lose_kda:
+			first_item['predict_ret_by_kda'] = 0
+		else:
+			first_item['predict_ret_by_kda'] = 1
 
+		if win_money > lose_money:
+			first_item['predict_ret_by_money'] = 0
+		else:
+			first_item['predict_ret_by_money'] = 1
+
+	return [first_item['match_id'], first_item['avg_kda'], first_item['avg_money'], first_item['win_or_lose'], first_item['predict_ret_by_kda'], first_item['predict_ret_by_money']]
+
+
+def get_match_id_list(table_index, total_count):
+	db = mysql_helper.MySQL('127.0.0.1', 'root', '111111', 3306)
+	db.selectDb('lol')
+	query_sql = "select distinct(match_id) from match_ex_info_%s limit %s" % (table_index, total_count)
+	print query_sql
+
+	db.query(query_sql)
+	rows = db.fetchAll()
+	return rows
 
 
 def main():
 	import argparse
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--area_id_name", dest="area_id_name", help=u"lol大区名")
-	parser.add_argument("--match_id", dest="match_id", help=u"lol比赛id")
-	parser.add_argument("--user_id_name", dest="user_id_name", help=u"lol游戏角色名")
+	parser.add_argument("--total_count", dest="total_count", help=u"总记录数")
+	parser.add_argument("--limit_num", dest="limit_num", help=u"单人历史场数")
+	parser.add_argument("--table_index", dest="table_index", help=u"数据库下标")
 	args = parser.parse_args()
 	# print args
-
-	# get_match_detail(u'%E7%94%B5%E4%BF%A1%E4%B8%80', 10525178168, u'%E6%A5%BC%E5%85%B0%E7%A0%B4')
 
 	options = vars(args)
 	for i in options:
 		if (None == options[i]):
 			parser.error("plase input " + i)
 
-	from urllib import quote
-	area_id_name = quote(options['area_id_name'])
-	match_id = quote(options['match_id'])
-	user_id_name = quote(options['user_id_name'])
-	# get_match_detail(area_id_name, match_id, user_id_name)
-	get_money(area_id_name, user_id_name)
-	get_kda(area_id_name, user_id_name)
+	#写入csv头
+	import csv
+	writer = csv.writer(file('predict_ret.csv', 'a'))
+	headers = ['赛事id', '平均kda', '平均金钱', '输赢', 'kda预测', '金钱预测']
+	writer.writerow(headers)
+
+	rows = get_match_id_list(options['table_index'], options['total_count'])
+	for item in rows:
+		match_id = item['match_id']
+		limit_num = options['limit_num']
+		val_list = get_match_detail(match_id, limit_num)
+
+		if None == val_list:
+			continue
+
+		writer.writerow(val_list)
+
 
 if __name__ == "__main__":
 	main()

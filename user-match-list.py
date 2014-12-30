@@ -1,9 +1,18 @@
 # -*- coding=utf-8 -*-
 
 from pyquery import PyQuery as pyq
-import json
 import urllib
 import urllib2
+
+def num_table_index(match_id):
+	return int(match_id)%100
+
+
+def name_table_index(val):
+	import binascii
+	num = binascii.crc32(val) & 0xffffffff
+	return (num%100)
+
 
 def insert_user_flag(area_id_name, user_id_name):
 	#输出mysql
@@ -15,7 +24,7 @@ def insert_user_flag(area_id_name, user_id_name):
 
     #写入数据库
 	sql = "insert ignore into user_id_name_update_flag ( area_id_name,user_id_name,chg_status ) values( '%s','%s','0' )" % (area_id_name, user_id_name)
-	print sql
+	# print sql
 
 	try:
 		# 执行sql语句
@@ -26,15 +35,18 @@ def insert_user_flag(area_id_name, user_id_name):
 		# print "Error %d: %s" % (e.args[0], e.args[1])
 		# Rollback in case there is any error
 		db.rollback()
+		db.close()
+
+	db.close()
 
 
 def get_match_detail(area_id_name, match_id, user_id_name):
 
 	referer_url = u'http://lolbox.duowan.com/matchList.php?serverName=%s&playerName=%s&page=0' % (urllib.quote(area_id_name), urllib.quote(user_id_name))
-	print referer_url
+	# print referer_url
 
 	query_url = u'http://lolbox.duowan.com/ajaxMatchDetail.php?matchId=%s&queueType=NORMAL&serverName=%s&playerName=%s' % (match_id, urllib.quote(area_id_name), urllib.quote(user_id_name))
-	print query_url
+	# print query_url
 
 	opener = urllib2.build_opener()
 	opener.addheaders = [('X-Requested-With:', 'XMLHttpRequest')]
@@ -133,7 +145,6 @@ def get_match_detail(area_id_name, match_id, user_id_name):
 		persion_profile["match_id"] = match_id
 		persion_profile["area_id_name"] = area_id_name
 		persion_profile["hero_name"] = hero_name
-		# print json.dumps(persion_profile, encoding="UTF-8", ensure_ascii=False)
 		match_persion_list.append(persion_profile)
 		# print persion_profile
 
@@ -147,7 +158,6 @@ def get_match_detail(area_id_name, match_id, user_id_name):
 		persion_index = persion_index + 1
 
 	#print user_profile_list
-	# print json.dumps(match_persion_list, encoding="UTF-8", ensure_ascii=False)
 
 	#输出mysql
 	import MySQLdb
@@ -161,7 +171,7 @@ def get_match_detail(area_id_name, match_id, user_id_name):
 		placeholders = ', '.join(['%s'] * len(item))
 		columns = ', '.join(item.keys())
 
-		sql = "insert into %s ( %s ) values ( %s )" % ('match_ex_info', columns, placeholders)
+		sql = "insert into match_ex_info_%s ( %s ) values ( %s )" % (num_table_index(match_id), columns, placeholders)
 		# print sql
 
 		try:
@@ -173,6 +183,7 @@ def get_match_detail(area_id_name, match_id, user_id_name):
 			# print "Error %d: %s" % (e.args[0], e.args[1])
 			# Rollback in case there is any error
 			db.rollback()
+			db.close()
 
 		#添加这个用户记录，方便后续查找
 		insert_user_flag(item['area_id_name'].decode('utf8'), item['user_id_name'])
@@ -180,8 +191,8 @@ def get_match_detail(area_id_name, match_id, user_id_name):
 	#写入比赛基本信息
 	placeholders = ', '.join(['%s'] * len(match_profile))
 	columns = ', '.join(match_profile.keys())
-	sql = "insert into %s ( %s ) values ( %s )" % ('match_base_info', columns, placeholders)
-	print sql
+	sql = "insert into match_base_info_%s ( %s ) values ( %s )" % (num_table_index(match_id), columns, placeholders)
+	# print sql
 
 	try:
 		# 执行sql语句
@@ -190,43 +201,22 @@ def get_match_detail(area_id_name, match_id, user_id_name):
 		db.commit()
 	except MySQLdb.Error, e:
 		# print "Error %d: %s" % (e.args[0], e.args[1])
-		# Rollback in case there is any error
 		db.rollback()
+		db.close()
 
 	# 关闭数据库连接
 	db.close()
 
-	# #输出csv文件
-	# import csv
-
-	# #输出比赛详细信息
-	# writer = csv.writer(file('match_ex_info.csv', 'a'))
-	# #写入csv头
-	# # fieldnames = list(match_persion_list[0].keys())
-	# # print json.dumps(fieldnames, encoding="UTF-8", ensure_ascii=False)
-	# # writer.writerow([unicode(s).encode("utf-8") for s in fieldnames])
-	# for item in match_persion_list:
-		# # print json.dumps(item.values(), encoding="UTF-8", ensure_ascii=False)
-		# writer.writerow([unicode(s).encode("utf-8") for s in item.keys()])
-		# writer.writerow([unicode(s).encode("utf-8") for s in item.values()])
-
-	# #输出比赛基本信息
-	# writer = csv.writer(file('match_base_info.csv', 'a'))
-	# writer.writerow([unicode(s).encode("utf-8") for s in match_profile.keys()])
-	# writer.writerow([unicode(s).encode("utf-8") for s in match_profile.values()])
 
 def get_match_list(area_id_name, user_id_name, page_index):
 	query_url = r'http://lolbox.duowan.com/matchList.php?serverName=%s&playerName=%s&page=%s#10540092369,NORMAL' % (urllib.quote(area_id_name), urllib.quote(user_id_name), page_index)
-	print query_url
+	# print query_url
 
 	doc=pyq(url=query_url)
-
 	# print doc
 
 	cts=doc('.l-page ul')
-
 	# print cts
-
 
 	match_list = []
 	for i in cts.find('li'):
@@ -236,7 +226,6 @@ def get_match_list(area_id_name, user_id_name, page_index):
 
 		csvDetail = strLoadMatchDetail.lstrip("loadMatchDetail\(").rstrip("\);")
 		detailList = csvDetail.split(',')
-		#print json.dumps(detailList, encoding="UTF-8", ensure_ascii=False)
 		match_id = detailList[0];
 
 		#print pyq(i)
@@ -256,10 +245,6 @@ def get_match_list(area_id_name, user_id_name, page_index):
 
 		match_list.append(match_profile)
 		# print match_profile
-		# print match_dict[match_id]
-		# print json.dumps(match_profile, encoding="UTF-8", ensure_ascii=False)
-
-	# print json.dumps(match_list, encoding="UTF-8", ensure_ascii=False)
 
 	#输出mysql
 	import MySQLdb
@@ -273,7 +258,7 @@ def get_match_list(area_id_name, user_id_name, page_index):
 		placeholders = ', '.join(['%s'] * len(item))
 		columns = ', '.join(item.keys())
 
-		sql = "insert into %s ( %s ) values ( %s )" % ('user_match_list_info', columns, placeholders)
+		sql = "insert into user_match_list_info_%s ( %s ) values ( %s )" % (name_table_index(user_id_name), columns, placeholders)
 		# print sql
 
 		try:
@@ -283,25 +268,15 @@ def get_match_list(area_id_name, user_id_name, page_index):
 			db.commit()
 		except MySQLdb.Error, e:
 			# print "Error %d: %s" % (e.args[0], e.args[1])
-			# Rollback in case there is any error
 			db.rollback()
+			db.close()
+
+	db.close()
 
 	#拉取比赛详细信息
 	for item in match_list:
 		get_match_detail(area_id_name, item['match_id'], user_id_name)
 
-	##输出csv文件
-	#import csv
-
-	#writer = csv.writer(file('user_match_list.csv', 'a'))
-	##写入csv头
-	## fieldnames = list(match_persion_list[0].keys())
-	## print json.dumps(fieldnames, encoding="UTF-8", ensure_ascii=False)
-	## writer.writerow([unicode(s).encode("utf-8") for s in fieldnames])
-	#for item in match_list:
-	#	# print json.dumps(item.values(), encoding="UTF-8", ensure_ascii=False)
-	#	# writer.writerow([unicode(s).encode("utf-8") for s in item.keys()])
-	#	writer.writerow([unicode(s).encode("utf-8") for s in item.values()])
 
 def update_user_flag(area_id_name, user_id_name, chg_status):
 	#输出mysql
@@ -315,7 +290,7 @@ def update_user_flag(area_id_name, user_id_name, chg_status):
 
     #写入数据库
 	sql = "update user_id_name_update_flag set chg_status='1' where area_id_name = '%s' and user_id_name = '%s' and chg_status='%s'" % (area_id_name, user_id_name, chg_status)
-	print sql
+	# print sql
 
 	try:
 		# 执行sql语句
@@ -324,8 +299,10 @@ def update_user_flag(area_id_name, user_id_name, chg_status):
 		db.commit()
 	except MySQLdb.Error, e:
 		# print "Error %d: %s" % (e.args[0], e.args[1])
-		# Rollback in case there is any error
 		db.rollback()
+		db.close()
+
+	db.close()
 
 def main():
 	import argparse
@@ -337,7 +314,7 @@ def main():
 	# print args
 
 	options = vars(args)
-	print options
+	# print options
 	for i in options:
 		if (None == options[i]):
 			parser.error("plase input " + i)

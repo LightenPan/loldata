@@ -1,5 +1,15 @@
 # -*- coding=utf-8 -*-
 
+def num_table_index(match_id):
+	return int(match_id)%100
+
+
+def name_table_index(val):
+	import binascii
+	num = binascii.crc32(val) & 0xffffffff
+	return (num%100)
+
+
 def check_is_finish():
 	#输出mysql
 	import MySQLdb
@@ -14,9 +24,12 @@ def check_is_finish():
 	# print rs
 
 	if len(rs) < 1:
+		db.close()
 		return True
 	else:
+		db.close()
 		return False
+
 
 def read_and_query():
 	#输出mysql
@@ -35,22 +48,25 @@ def read_and_query():
 		db.commit()
 	except MySQLdb.Error, e:
 		db.rollback()
+		db.close()
 
 	select_sql = "select * from user_id_name_update_flag where chg_status='%s';" % chg_status
 	cursor.execute(select_sql)
 	rs = cursor.fetchall()
-	print rs
+	# print rs
+	db.close()
 
 	if len(rs) < 1:
 		return
 
 	row = rs[0]
-	print row
+	# print row
 
 	import subprocess
 	shell_cmd = 'python user-match-list.py --area_id_name=%s --user_id_name=%s --chg_status=%s' % (row['area_id_name'], row['user_id_name'], chg_status)
-	print shell_cmd
+	# print shell_cmd
 	subprocess.call(shell_cmd, shell=True)
+
 
 def main():
 	import argparse
